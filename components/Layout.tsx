@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ListTodo, BookOpen, LifeBuoy, Menu, X, Bell } from 'lucide-react';
+import { LayoutDashboard, ListTodo, BookOpen, LifeBuoy, Menu, X, Bell, Settings } from 'lucide-react';
+import ApiKeyManager from './ApiKeyManager';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,6 +9,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const location = useLocation();
 
   const navItems = [
@@ -56,11 +58,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               ))}
             </nav>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
+              <button 
+                onClick={() => setIsApiKeyModalOpen(true)}
+                className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                title="API Key 관리"
+              >
+                <Settings size={20} />
+              </button>
+              
               <button className="p-2 text-blue-100 hover:text-white relative">
                 <Bell size={20} />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#00B894] rounded-full"></span>
               </button>
+              
               <div className="hidden md:flex items-center gap-2">
                 <img
                   src="https://picsum.photos/seed/user1/40/40"
@@ -124,6 +135,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       </footer>
+
+      {/* API Key Manager Modal */}
+      <ApiKeyManager 
+        isOpen={isApiKeyModalOpen} 
+        onClose={() => setIsApiKeyModalOpen(false)} 
+      />
     </div>
   );
 };
