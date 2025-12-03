@@ -1,0 +1,5 @@
+{
+  "name": "TeamSync - 프로젝트 관리 포털",
+  "description": "부서원들을 위한 프로젝트 현황 공유 및 업무 관리 대시보드입니다. 진행 상황 파악, 칸반 보드, 가이드라인 및 지원 요청 기능을 제공합니다.",
+  "requestFramePermissions": []
+}
