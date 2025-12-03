@@ -10,6 +10,7 @@ const updates: UpdateFeed[] = [
   { id: '3', user: '박준호', action: '이슈 등록', target: '서버 마이그레이션', time: '3시간 전', avatarId: 45 },
   { id: '4', user: '최수진', action: '검토 요청', target: '모바일 앱 UI', time: '4시간 전', avatarId: 12 },
   { id: '5', user: '정우성', action: '댓글 작성', target: '주간 보고서', time: '5시간 전', avatarId: 33 },
+  { id: '6', user: '강지원', action: '파일 업로드', target: '기획서 초안', time: '6시간 전', avatarId: 15 },
 ];
 
 const chartData = [
@@ -24,9 +25,9 @@ const COLORS = ['#94a3b8', '#60a5fa', '#0F4C81', '#fbbf24', '#00B894'];
 
 const Home: React.FC = () => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 h-full flex flex-col">
       {/* Hero Section */}
-      <section className="relative bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+      <section className="relative bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 shrink-0">
         <div className="absolute inset-0 z-0">
             <img 
                 src="https://picsum.photos/seed/dashboard_bg/1200/400" 
@@ -55,10 +56,10 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Dashboard Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Dashboard Grid - Fixed height on desktop to enforce internal scrolling */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-[500px]">
         {/* Stats Chart */}
-        <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+        <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex justify-between items-center mb-6 shrink-0">
                 <h2 className="text-lg font-bold text-gray-800">부서별 업무 현황</h2>
                 <select className="text-sm border-gray-200 border rounded-md p-1 bg-gray-50 text-gray-600">
@@ -66,8 +67,8 @@ const Home: React.FC = () => {
                     <option>지난 주</option>
                 </select>
             </div>
-            {/* Height adjusted to h-80 for better balance with the sidebar */}
-            <div className="h-80 w-full flex-1">
+            {/* Flex-1 allows chart to fill remaining height of the 500px container */}
+            <div className="w-full flex-1 min-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -88,7 +89,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* Quick Actions & Recent */}
-        <div className="flex flex-col gap-6 h-full">
+        <div className="flex flex-col gap-6 h-full min-h-0">
             {/* Quick Actions */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 shrink-0">
                 <h2 className="text-lg font-bold text-gray-800 mb-4">빠른 실행</h2>
@@ -105,9 +106,10 @@ const Home: React.FC = () => {
             </div>
 
             {/* Recent Updates Feed */}
+            {/* min-h-0 and flex-1 are crucial for nested scrolling within a flex container */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col min-h-0">
                 <h2 className="text-lg font-bold text-gray-800 mb-4 shrink-0">최근 업데이트</h2>
-                <div className="space-y-4 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="space-y-4 overflow-y-auto pr-1 custom-scrollbar flex-1">
                     {updates.map((update) => (
                         <div key={update.id} className="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
                             <img 
