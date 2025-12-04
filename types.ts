@@ -1,6 +1,8 @@
+
 export interface Project {
   id: string;
   name: string;
+  country: string; // 국가 필드 추가
   status: 'In Progress' | 'Completed' | 'Delayed' | 'Planning';
   progress: number;
   deadline: string;

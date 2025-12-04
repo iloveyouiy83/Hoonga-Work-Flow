@@ -1,17 +1,68 @@
+
 import React, { useState } from 'react';
-import { Search, Filter, Calendar, MoreHorizontal } from 'lucide-react';
+import { Search, Calendar, Edit2, Trash2, X, Save, Plus, MapPin } from 'lucide-react';
 import { Project } from '../types';
 
-const mockProjects: Project[] = [
-  { id: '1', name: '2024년도 웹사이트 리뉴얼', status: 'In Progress', progress: 65, deadline: '2024-06-30', manager: '김철수', department: '개발팀' },
-  { id: '2', name: '사내 보안 시스템 구축', status: 'Delayed', progress: 40, deadline: '2024-05-15', manager: '이민호', department: '인프라팀' },
-  { id: '3', name: 'Q2 마케팅 캠페인', status: 'Completed', progress: 100, deadline: '2024-04-01', manager: '박지영', department: '마케팅팀' },
-  { id: '4', name: '모바일 앱 V2.0 기획', status: 'Planning', progress: 15, deadline: '2024-08-20', manager: '최수진', department: '기획팀' },
-  { id: '5', name: '데이터 분석 플랫폼 도입', status: 'In Progress', progress: 30, deadline: '2024-09-10', manager: '정우성', department: '데이터팀' },
+const initialProjects: Project[] = [
+  { id: '1', name: '2024년도 웹사이트 리뉴얼', country: '대한민국', status: 'In Progress', progress: 65, deadline: '2024-06-30', manager: '김철수', department: '개발팀' },
+  { id: '2', name: '사내 보안 시스템 구축', country: '미국', status: 'Delayed', progress: 40, deadline: '2024-05-15', manager: '이민호', department: '인프라팀' },
+  { id: '3', name: 'Q2 마케팅 캠페인', country: '일본', status: 'Completed', progress: 100, deadline: '2024-04-01', manager: '박지영', department: '마케팅팀' },
+  { id: '4', name: '모바일 앱 V2.0 기획', country: '대한민국', status: 'Planning', progress: 15, deadline: '2024-08-20', manager: '최수진', department: '기획팀' },
+  { id: '5', name: '데이터 분석 플랫폼 도입', country: '싱가포르', status: 'In Progress', progress: 30, deadline: '2024-09-10', manager: '정우성', department: '데이터팀' },
 ];
 
 const Projects: React.FC = () => {
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [filter, setFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Form State
+  const initialFormState: Project = {
+    id: '',
+    name: '',
+    country: '',
+    status: 'Planning',
+    progress: 0,
+    deadline: '',
+    manager: '',
+    department: ''
+  };
+  const [formData, setFormData] = useState<Project>(initialFormState);
+
+  // Handlers
+  const handleOpenCreate = () => {
+    setFormData({ ...initialFormState, id: Date.now().toString() });
+    setIsEditing(false);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (project: Project) => {
+    setFormData(project);
+    setIsEditing(true);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('정말 이 프로젝트를 삭제하시겠습니까?')) {
+      setProjects(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isEditing) {
+      setProjects(prev => prev.map(p => p.id === formData.id ? formData : p));
+    } else {
+      setProjects(prev => [...prev, formData]);
+    }
+    
+    setIsModalOpen(false);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -33,19 +84,25 @@ const Projects: React.FC = () => {
     }
   };
 
-  const filteredProjects = filter === 'All' 
-    ? mockProjects 
-    : mockProjects.filter(p => p.status === filter);
+  const filteredProjects = projects.filter(p => {
+    const matchesFilter = filter === 'All' || p.status === filter;
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          p.manager.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">프로젝트 현황</h1>
-          <p className="text-gray-500 text-sm mt-1">부서 내 진행 중인 모든 프로젝트를 모니터링합니다.</p>
+          <p className="text-gray-500 text-sm mt-1">부서 내 진행 중인 모든 프로젝트를 모니터링하고 관리합니다.</p>
         </div>
-        <button className="bg-[#0F4C81] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0a355c] transition-colors">
-          + 새 프로젝트
+        <button 
+          onClick={handleOpenCreate}
+          className="bg-[#0F4C81] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0a355c] transition-colors flex items-center gap-2 shadow-sm"
+        >
+          <Plus size={18} /> 새 프로젝트
         </button>
       </div>
 
@@ -69,7 +126,9 @@ const Projects: React.FC = () => {
         <div className="relative w-full sm:w-64">
           <input 
             type="text" 
-            placeholder="프로젝트명 검색..." 
+            placeholder="프로젝트명, 담당자 검색..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0F4C81] focus:border-transparent"
           />
           <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
@@ -83,11 +142,12 @@ const Projects: React.FC = () => {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">프로젝트명</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">국가</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">담당자/부서</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">상태</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/4">진행률</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/5">진행률</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">마감일</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">관리</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -95,6 +155,12 @@ const Projects: React.FC = () => {
                 <tr key={project.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{project.name}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <MapPin size={14} className="mr-1 text-gray-400" />
+                      {project.country}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
@@ -119,7 +185,7 @@ const Projects: React.FC = () => {
                           style={{ width: `${project.progress}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-600 font-medium">{project.progress}%</span>
+                      <span className="text-xs text-gray-600 font-medium w-8 text-right">{project.progress}%</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -129,9 +195,22 @@ const Projects: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <button className="text-gray-400 hover:text-gray-600">
-                        <MoreHorizontal size={18} />
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => handleOpenEdit(project)}
+                        className="p-1.5 text-gray-400 hover:text-[#0F4C81] hover:bg-blue-50 rounded transition-colors"
+                        title="수정"
+                      >
+                          <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(project.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="삭제"
+                      >
+                          <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -140,10 +219,131 @@ const Projects: React.FC = () => {
         </div>
         {filteredProjects.length === 0 && (
             <div className="p-8 text-center text-gray-500">
-                해당 상태의 프로젝트가 없습니다.
+                검색 결과가 없습니다.
             </div>
         )}
       </div>
+
+      {/* Project Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+            <div className="bg-[#0F4C81] p-5 text-white flex justify-between items-center">
+              <h2 className="text-lg font-bold">{isEditing ? '프로젝트 수정' : '새 프로젝트 등록'}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-blue-200 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트명</label>
+                <input
+                  required
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  placeholder="프로젝트 이름을 입력하세요"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">국가</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                    placeholder="ex) 대한민국"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">마감일</label>
+                  <input
+                    required
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.manager}
+                    onChange={(e) => setFormData({...formData, manager: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">부서</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({...formData, department: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm bg-white"
+                  >
+                    <option value="Planning">Planning</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    진행률: <span className="text-[#0F4C81] font-bold">{formData.progress}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={formData.progress}
+                    onChange={(e) => setFormData({...formData, progress: parseInt(e.target.value)})}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0F4C81] mt-2"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-white bg-[#0F4C81] hover:bg-[#0a355c] rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <Save size={16} />
+                  {isEditing ? '수정 완료' : '프로젝트 등록'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
