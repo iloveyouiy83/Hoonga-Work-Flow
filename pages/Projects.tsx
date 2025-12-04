@@ -1,18 +1,10 @@
-
 import React, { useState } from 'react';
 import { Search, Calendar, Edit2, Trash2, X, Save, Plus, MapPin } from 'lucide-react';
 import { Project } from '../types';
-
-const initialProjects: Project[] = [
-  { id: '1', name: '2024년도 웹사이트 리뉴얼', country: '대한민국', status: 'In Progress', progress: 65, deadline: '2024-06-30', manager: '김철수', department: '개발팀' },
-  { id: '2', name: '사내 보안 시스템 구축', country: '미국', status: 'Delayed', progress: 40, deadline: '2024-05-15', manager: '이민호', department: '인프라팀' },
-  { id: '3', name: 'Q2 마케팅 캠페인', country: '일본', status: 'Completed', progress: 100, deadline: '2024-04-01', manager: '박지영', department: '마케팅팀' },
-  { id: '4', name: '모바일 앱 V2.0 기획', country: '대한민국', status: 'Planning', progress: 15, deadline: '2024-08-20', manager: '최수진', department: '기획팀' },
-  { id: '5', name: '데이터 분석 플랫폼 도입', country: '싱가포르', status: 'In Progress', progress: 30, deadline: '2024-09-10', manager: '정우성', department: '데이터팀' },
-];
+import { useData } from '../context/DataContext';
 
 const Projects: React.FC = () => {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const { projects, addProject, updateProject, deleteProject } = useData();
   const [filter, setFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -48,7 +40,7 @@ const Projects: React.FC = () => {
 
   const handleDelete = (id: string) => {
     if (window.confirm('정말 이 프로젝트를 삭제하시겠습니까?')) {
-      setProjects(prev => prev.filter(p => p.id !== id));
+      deleteProject(id);
     }
   };
 
@@ -56,9 +48,9 @@ const Projects: React.FC = () => {
     e.preventDefault();
     
     if (isEditing) {
-      setProjects(prev => prev.map(p => p.id === formData.id ? formData : p));
+      updateProject(formData);
     } else {
-      setProjects(prev => [...prev, formData]);
+      addProject(formData);
     }
     
     setIsModalOpen(false);

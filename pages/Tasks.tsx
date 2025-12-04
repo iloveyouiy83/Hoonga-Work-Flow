@@ -1,17 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Plus, GripVertical, Calendar, User } from 'lucide-react';
 import { Task } from '../types';
-
-const initialTasks: Task[] = [
-  { id: 't1', title: '메인 페이지 디자인 시안 리뷰', assignee: '김민수', priority: 'High', status: 'todo', dueDate: '2024-05-20' },
-  { id: 't2', title: 'API 명세서 작성', assignee: '박준호', priority: 'Medium', status: 'doing', dueDate: '2024-05-22' },
-  { id: 't3', title: '로고 리소스 정리', assignee: '이영희', priority: 'Low', status: 'done', dueDate: '2024-05-18' },
-  { id: 't4', title: '경쟁사 분석 리포트', assignee: '최수진', priority: 'High', status: 'todo', dueDate: '2024-05-25' },
-  { id: 't5', title: '주간 회의 자료 준비', assignee: '김철수', priority: 'Medium', status: 'doing', dueDate: '2024-05-21' },
-];
+import { useData } from '../context/DataContext';
 
 const Tasks: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { tasks, updateTask } = useData();
 
   // Simple drag and drop handlers
   const onDragStart = (e: React.DragEvent, taskId: string) => {
@@ -24,9 +17,10 @@ const Tasks: React.FC = () => {
 
   const onDrop = (e: React.DragEvent, targetStatus: Task['status']) => {
     const taskId = e.dataTransfer.getData('taskId');
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, status: targetStatus } : task
-    ));
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (taskToUpdate && taskToUpdate.status !== targetStatus) {
+      updateTask({ ...taskToUpdate, status: targetStatus });
+    }
   };
 
   const getPriorityColor = (priority: string) => {

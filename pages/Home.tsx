@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Clock, AlertCircle, PlusCircle, FileText } from 'lucide-react';
+import { ArrowRight, Clock, PlusCircle, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { UpdateFeed } from '../types';
+import { useData } from '../context/DataContext';
 
 const updates: UpdateFeed[] = [
   { id: '1', user: '김민수', action: '완료', target: 'Q3 마케팅 기획안', time: '10분 전', avatarId: 10 },
@@ -13,17 +14,32 @@ const updates: UpdateFeed[] = [
   { id: '6', user: '강지원', action: '파일 업로드', target: '기획서 초안', time: '6시간 전', avatarId: 15 },
 ];
 
-const chartData = [
-  { name: '기획', count: 12 },
-  { name: '디자인', count: 8 },
-  { name: '개발', count: 15 },
-  { name: '테스트', count: 6 },
-  { name: '완료', count: 24 },
-];
-
-const COLORS = ['#94a3b8', '#60a5fa', '#0F4C81', '#fbbf24', '#00B894'];
+const COLORS = ['#94a3b8', '#60a5fa', '#fbbf24', '#00B894'];
 
 const Home: React.FC = () => {
+  const { projects } = useData();
+
+  // Calculate project statistics based on real data
+  const projectStats = {
+    Planning: 0,
+    'In Progress': 0,
+    Delayed: 0,
+    Completed: 0
+  };
+
+  projects.forEach(p => {
+    if (projectStats[p.status] !== undefined) {
+      projectStats[p.status]++;
+    }
+  });
+
+  const chartData = [
+    { name: '기획', count: projectStats.Planning },
+    { name: '진행 중', count: projectStats['In Progress'] },
+    { name: '지연', count: projectStats.Delayed },
+    { name: '완료', count: projectStats.Completed },
+  ];
+
   return (
     <div className="space-y-8 h-full flex flex-col">
       {/* Hero Section */}
@@ -61,10 +77,10 @@ const Home: React.FC = () => {
         {/* Stats Chart */}
         <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex justify-between items-center mb-6 shrink-0">
-                <h2 className="text-lg font-bold text-gray-800">부서별 업무 현황</h2>
+                <h2 className="text-lg font-bold text-gray-800">부서별 프로젝트 현황</h2>
                 <select className="text-sm border-gray-200 border rounded-md p-1 bg-gray-50 text-gray-600">
-                    <option>이번 주</option>
-                    <option>지난 주</option>
+                    <option>전체 기간</option>
+                    <option>이번 달</option>
                 </select>
             </div>
             {/* Flex-1 allows chart to fill remaining height of the 500px container */}
@@ -73,7 +89,7 @@ const Home: React.FC = () => {
                     <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} allowDecimals={false} />
                         <Tooltip 
                             cursor={{fill: '#f8fafc'}}
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
