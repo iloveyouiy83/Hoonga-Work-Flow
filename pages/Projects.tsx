@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
-import { Search, Edit2, Trash2, X, Save, Plus, MapPin, AlertTriangle, CheckCircle2, Clock, Calendar } from 'lucide-react';
-import { Project, ProcessStage, HealthStatus } from '../types';
+import { Search, Calendar, Edit2, Trash2, X, Save, Plus, MapPin } from 'lucide-react';
+import { Project } from '../types';
 import { useData } from '../context/DataContext';
 
 const Projects: React.FC = () => {
@@ -16,30 +15,15 @@ const Projects: React.FC = () => {
   // Form State
   const initialFormState: Project = {
     id: '',
-    vendor: '',
+    name: '',
     country: '',
-    productionNumber: '',
-    pm: '',
+    status: 'Planning',
+    progress: 0,
+    deadline: '',
     manager: '',
-    fatDate: '',
-    deliveryDate: '',
-    processStage: 'Pending Inspection',
-    healthStatus: 'Normal',
-    bom: { deadline: '', warningDays: 7 },
-    drawing: { deadline: '', warningDays: 7 },
-    program: { deadline: '', warningDays: 7 },
+    department: ''
   };
   const [formData, setFormData] = useState<Project>(initialFormState);
-
-  // Filter Categories
-  const filters: { key: string; label: string }[] = [
-    { key: 'All', label: '전체' },
-    { key: 'Pending Inspection', label: '검수예정' },
-    { key: 'Confirmed Inspection', label: '검수확정' },
-    { key: 'Inspection Completed', label: '검수완료' },
-    { key: 'Confirmed Shipment', label: '출고확정' },
-    { key: 'Shipment Completed', label: '출고완료' },
-  ];
 
   // Handlers
   const handleOpenCreate = () => {
@@ -62,94 +46,49 @@ const Projects: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (isEditing) {
       updateProject(formData);
     } else {
       addProject(formData);
     }
+    
     setIsModalOpen(false);
   };
 
-  const getProcessLabel = (stage: string) => {
-    const found = filters.find(f => f.key === stage);
-    return found ? found.label : stage;
-  };
-
-  const getHealthBadge = (status: HealthStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Normal':
-        return <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1 w-fit"><CheckCircle2 size={12}/> 정상</span>;
-      case 'Delayed':
-        return <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-bold flex items-center gap-1 w-fit"><AlertTriangle size={12}/> 지연</span>;
-      case 'Completed':
-        return <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1 w-fit"><Clock size={12}/> 완료</span>;
-      default:
-        return null;
+      case 'In Progress': return 'bg-blue-100 text-blue-800';
+      case 'Completed': return 'bg-emerald-100 text-emerald-800';
+      case 'Delayed': return 'bg-red-100 text-red-800';
+      case 'Planning': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Logic to determine if a subtask is overdue or in warning period
-  const getDeadlineStatus = (deadline: string, warningDays: number) => {
-    if (!deadline) return 'normal';
-    
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    
-    const targetDate = new Date(deadline);
-    const warningDate = new Date(targetDate);
-    warningDate.setDate(targetDate.getDate() - warningDays);
-
-    if (today > targetDate) return 'overdue';
-    if (today >= warningDate) return 'warning';
-    return 'normal';
-  };
-
-  const getDeadlineStyles = (status: string) => {
-    switch(status) {
-        case 'overdue': return 'bg-red-50 border-red-200 text-red-700 ring-1 ring-red-100';
-        case 'warning': return 'bg-orange-50 border-orange-200 text-orange-700 ring-1 ring-orange-100';
-        default: return 'bg-gray-50 border-gray-100 text-gray-600';
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+        case 'In Progress': return '진행 중';
+        case 'Completed': return '완료됨';
+        case 'Delayed': return '지연됨';
+        case 'Planning': return '기획 중';
+        default: return status;
     }
   };
 
   const filteredProjects = projects.filter(p => {
-    const matchesFilter = filter === 'All' || p.processStage === filter;
-    const matchesSearch = p.vendor.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          p.pm.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.manager.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.productionNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filter === 'All' || p.status === filter;
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          p.manager.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
-
-  // Helper component for Subtask Cell
-  const SubtaskCell = ({ label, deadline, warningDays }: { label: string, deadline: string, warningDays: number }) => {
-    const status = getDeadlineStatus(deadline, warningDays);
-    return (
-        <div className={`p-2 rounded border ${getDeadlineStyles(status)} transition-colors`}>
-            <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] opacity-75 font-medium">{label}</span>
-                {status === 'warning' && (
-                    <span title={`마감 ${warningDays}일 전 경고`}>
-                        <AlertTriangle size={10} />
-                    </span>
-                )}
-                {status === 'overdue' && (
-                    <span title="마감일 초과">
-                        <AlertTriangle size={10} />
-                    </span>
-                )}
-            </div>
-            <div className="font-semibold text-xs whitespace-nowrap">{deadline}</div>
-        </div>
-    );
-  };
 
   return (
     <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">프로젝트 현황</h1>
-          <p className="text-gray-500 text-sm mt-1">제작 공정 및 납품 일정을 통합 관리합니다.</p>
+          <p className="text-gray-500 text-sm mt-1">부서 내 진행 중인 모든 프로젝트를 모니터링하고 관리합니다.</p>
         </div>
         <button 
           onClick={handleOpenCreate}
@@ -161,25 +100,25 @@ const Projects: React.FC = () => {
 
       {/* Filters and Search */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto no-scrollbar">
-          {filters.map((f) => (
+        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto">
+          {['All', 'In Progress', 'Planning', 'Delayed', 'Completed'].map((status) => (
             <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
+              key={status}
+              onClick={() => setFilter(status)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                filter === f.key 
+                filter === status 
                 ? 'bg-[#0F4C81] text-white' 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {f.label}
+              {status === 'All' ? '전체' : getStatusLabel(status)}
             </button>
           ))}
         </div>
-        <div className="relative w-full sm:w-64 shrink-0">
+        <div className="relative w-full sm:w-64">
           <input 
             type="text" 
-            placeholder="업체명, 제작번호, 담당자..." 
+            placeholder="프로젝트명, 담당자 검색..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0F4C81] focus:border-transparent"
@@ -191,71 +130,63 @@ const Projects: React.FC = () => {
       {/* Project Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1300px]">
+          <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">업체명</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">제작번호</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">국가</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">PM / 담당자</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">일정 (FAT/납기)</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">관리 항목 (BOM/도면/프로그램)</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">진행 단계</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-20">상태</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center w-24">관리</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">프로젝트명</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">국가</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">담당자/부서</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">상태</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/5">진행률</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">마감일</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredProjects.map((project) => (
                 <tr key={project.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-4">
-                    <div className="font-bold text-gray-900">{project.vendor}</div>
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{project.name}</div>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-0.5 rounded w-fit">
-                        {project.productionNumber}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
+                  <td className="px-6 py-4">
                     <div className="flex items-center text-gray-600 text-sm">
                       <MapPin size={14} className="mr-1 text-gray-400" />
                       {project.country}
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="text-sm">
-                        <div className="font-medium text-gray-800">PM: {project.pm}</div>
-                        <div className="text-gray-500 text-xs">담당: {project.manager}</div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="text-sm text-gray-600 space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded">FAT</span> 
-                            <span>{project.fatDate}</span>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-[#0F4C81]">
+                            {project.manager[0]}
                         </div>
-                        <div className="flex items-center gap-1.5 font-medium text-blue-900">
-                            <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded">납기</span> 
-                            <span>{project.deliveryDate}</span>
+                        <div className="text-sm text-gray-600">
+                            {project.manager} <span className="text-gray-400 text-xs">({project.department})</span>
                         </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="grid grid-cols-3 gap-2">
-                        <SubtaskCell label="1차 BOM" deadline={project.bom.deadline} warningDays={project.bom.warningDays} />
-                        <SubtaskCell label="도면 출도" deadline={project.drawing.deadline} warningDays={project.drawing.warningDays} />
-                        <SubtaskCell label="프로그램" deadline={project.program.deadline} warningDays={project.program.warningDays} />
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className="text-sm font-medium text-gray-700">
-                      {getProcessLabel(project.processStage)}
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                      {getStatusLabel(project.status)}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
-                    {getHealthBadge(project.healthStatus)}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-grow bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${project.status === 'Delayed' ? 'bg-red-500' : 'bg-[#00B894]'}`}
+                          style={{ width: `${project.progress}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-600 font-medium w-8 text-right">{project.progress}%</span>
+                    </div>
                   </td>
-                  <td className="px-4 py-4 text-center">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                        <Calendar size={14} className="mr-1.5" />
+                        {project.deadline}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button 
                         onClick={() => handleOpenEdit(project)}
@@ -279,152 +210,113 @@ const Projects: React.FC = () => {
           </table>
         </div>
         {filteredProjects.length === 0 && (
-            <div className="p-12 text-center text-gray-500">
-                조건에 맞는 프로젝트가 없습니다.
+            <div className="p-8 text-center text-gray-500">
+                검색 결과가 없습니다.
             </div>
         )}
       </div>
 
-      {/* Project Create/Edit Modal */}
+      {/* Project Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 animate-fade-in-up">
-            <div className="bg-[#0F4C81] p-5 text-white flex justify-between items-center rounded-t-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+            <div className="bg-[#0F4C81] p-5 text-white flex justify-between items-center">
               <h2 className="text-lg font-bold">{isEditing ? '프로젝트 수정' : '새 프로젝트 등록'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-blue-200 hover:text-white">
                 <X size={20} />
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* 기본 정보 */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                    <Edit2 size={14} className="text-[#00B894]"/> 기본 정보
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">업체명</label>
-                    <input required type="text" value={formData.vendor} onChange={(e) => setFormData({...formData, vendor: e.target.value})} className="form-input" placeholder="예: 현대자동차" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">국가</label>
-                    <input required type="text" value={formData.country} onChange={(e) => setFormData({...formData, country: e.target.value})} className="form-input" placeholder="예: 대한민국" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">FAT 일정</label>
-                        <input required type="date" value={formData.fatDate} onChange={(e) => setFormData({...formData, fatDate: e.target.value})} className="form-input" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">납기일</label>
-                        <input required type="date" value={formData.deliveryDate} onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})} className="form-input" />
-                    </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">PM</label>
-                        <input required type="text" value={formData.pm} onChange={(e) => setFormData({...formData, pm: e.target.value})} className="form-input" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
-                        <input required type="text" value={formData.manager} onChange={(e) => setFormData({...formData, manager: e.target.value})} className="form-input" />
-                    </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트명</label>
+                <input
+                  required
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  placeholder="프로젝트 이름을 입력하세요"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">국가</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                    placeholder="ex) 대한민국"
+                  />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">제작번호</label>
-                    <input required type="text" value={formData.productionNumber} onChange={(e) => setFormData({...formData, productionNumber: e.target.value})} className="form-input" placeholder="P-24XXX" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">마감일</label>
+                  <input
+                    required
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  />
                 </div>
               </div>
 
-              {/* 관리 항목 */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                    <Calendar size={14} className="text-[#00B894]"/> 관리 항목 설정 (마감일 및 사전 경고)
-                </h3>
-                
-                {/* 1차 BOM */}
-                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                    <div className="grid grid-cols-12 gap-4 items-center">
-                        <div className="col-span-3 text-sm font-bold text-gray-700">1차 BOM</div>
-                        <div className="col-span-5">
-                            <label className="block text-xs text-gray-500 mb-1">마감일</label>
-                            <input required type="date" value={formData.bom.deadline} onChange={(e) => setFormData({...formData, bom: {...formData.bom, deadline: e.target.value}})} className="form-input" />
-                        </div>
-                        <div className="col-span-4">
-                            <label className="block text-xs text-gray-500 mb-1">사전 경고(일)</label>
-                            <div className="flex items-center gap-2">
-                                <input required type="number" min="0" value={formData.bom.warningDays} onChange={(e) => setFormData({...formData, bom: {...formData.bom, warningDays: parseInt(e.target.value)}})} className="form-input text-right" />
-                                <span className="text-xs text-gray-500">일 전</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* 도면 출도 */}
-                    <div className="grid grid-cols-12 gap-4 items-center pt-2 border-t border-gray-200">
-                        <div className="col-span-3 text-sm font-bold text-gray-700">도면 출도</div>
-                        <div className="col-span-5">
-                            <input required type="date" value={formData.drawing.deadline} onChange={(e) => setFormData({...formData, drawing: {...formData.drawing, deadline: e.target.value}})} className="form-input" />
-                        </div>
-                        <div className="col-span-4">
-                            <div className="flex items-center gap-2">
-                                <input required type="number" min="0" value={formData.drawing.warningDays} onChange={(e) => setFormData({...formData, drawing: {...formData.drawing, warningDays: parseInt(e.target.value)}})} className="form-input text-right" />
-                                <span className="text-xs text-gray-500">일 전</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 프로그램 */}
-                    <div className="grid grid-cols-12 gap-4 items-center pt-2 border-t border-gray-200">
-                        <div className="col-span-3 text-sm font-bold text-gray-700">프로그램</div>
-                        <div className="col-span-5">
-                            <input required type="date" value={formData.program.deadline} onChange={(e) => setFormData({...formData, program: {...formData.program, deadline: e.target.value}})} className="form-input" />
-                        </div>
-                        <div className="col-span-4">
-                            <div className="flex items-center gap-2">
-                                <input required type="number" min="0" value={formData.program.warningDays} onChange={(e) => setFormData({...formData, program: {...formData.program, warningDays: parseInt(e.target.value)}})} className="form-input text-right" />
-                                <span className="text-xs text-gray-500">일 전</span>
-                            </div>
-                        </div>
-                    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.manager}
+                    onChange={(e) => setFormData({...formData, manager: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">부서</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({...formData, department: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm"
+                  />
                 </div>
               </div>
 
-              {/* 상태 설정 */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-[#00B894]"/> 진행 상태
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">진행 단계</label>
-                        <select 
-                            value={formData.processStage}
-                            onChange={(e) => setFormData({...formData, processStage: e.target.value as ProcessStage})}
-                            className="form-input bg-white"
-                        >
-                            {filters.filter(f => f.key !== 'All').map(f => (
-                                <option key={f.key} value={f.key}>{f.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">상태 표시</label>
-                        <select 
-                            value={formData.healthStatus}
-                            onChange={(e) => setFormData({...formData, healthStatus: e.target.value as HealthStatus})}
-                            className="form-input bg-white"
-                        >
-                            <option value="Normal">정상</option>
-                            <option value="Delayed">지연</option>
-                            <option value="Completed">완료</option>
-                        </select>
-                    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0F4C81] outline-none text-sm bg-white"
+                  >
+                    <option value="Planning">Planning</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    진행률: <span className="text-[#0F4C81] font-bold">{formData.progress}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={formData.progress}
+                    onChange={(e) => setFormData({...formData, progress: parseInt(e.target.value)})}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0F4C81] mt-2"
+                  />
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t">
+              <div className="pt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -444,29 +336,6 @@ const Projects: React.FC = () => {
           </div>
         </div>
       )}
-      
-      <style>{`
-        .form-input {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            outline: none;
-            transition: all 0.2s;
-        }
-        .form-input:focus {
-            border-color: #0F4C81;
-            box-shadow: 0 0 0 2px rgba(15, 76, 129, 0.1);
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 };

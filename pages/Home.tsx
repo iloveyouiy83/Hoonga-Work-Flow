@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, PlusCircle, FileText } from 'lucide-react';
@@ -7,12 +6,12 @@ import { UpdateFeed } from '../types';
 import { useData } from '../context/DataContext';
 
 const updates: UpdateFeed[] = [
-  { id: '1', user: '김민수', action: '완료', target: 'P-24001 도면', time: '10분 전', avatarId: 10 },
-  { id: '2', user: '이영희', action: '업데이트', target: 'P-24005 BOM', time: '1시간 전', avatarId: 23 },
-  { id: '3', user: '박준호', action: '이슈 등록', target: '납기 지연 예상', time: '3시간 전', avatarId: 45 },
-  { id: '4', user: '최수진', action: '검토 요청', target: 'FAT 체크리스트', time: '4시간 전', avatarId: 12 },
+  { id: '1', user: '김민수', action: '완료', target: 'Q3 마케팅 기획안', time: '10분 전', avatarId: 10 },
+  { id: '2', user: '이영희', action: '업데이트', target: '디자인 시스템 v2.0', time: '1시간 전', avatarId: 23 },
+  { id: '3', user: '박준호', action: '이슈 등록', target: '서버 마이그레이션', time: '3시간 전', avatarId: 45 },
+  { id: '4', user: '최수진', action: '검토 요청', target: '모바일 앱 UI', time: '4시간 전', avatarId: 12 },
   { id: '5', user: '정우성', action: '댓글 작성', target: '주간 보고서', time: '5시간 전', avatarId: 33 },
-  { id: '6', user: '강지원', action: '파일 업로드', target: 'P-23099 선적서류', time: '6시간 전', avatarId: 15 },
+  { id: '6', user: '강지원', action: '파일 업로드', target: '기획서 초안', time: '6시간 전', avatarId: 15 },
 ];
 
 const COLORS = ['#94a3b8', '#60a5fa', '#fbbf24', '#00B894'];
@@ -20,23 +19,25 @@ const COLORS = ['#94a3b8', '#60a5fa', '#fbbf24', '#00B894'];
 const Home: React.FC = () => {
   const { projects } = useData();
 
-  // Calculate project statistics based on HealthStatus
-  const healthStats = {
-    Normal: 0,
+  // Calculate project statistics based on real data
+  const projectStats = {
+    Planning: 0,
+    'In Progress': 0,
     Delayed: 0,
     Completed: 0
   };
 
   projects.forEach(p => {
-    if (healthStats[p.healthStatus] !== undefined) {
-      healthStats[p.healthStatus]++;
+    if (projectStats[p.status] !== undefined) {
+      projectStats[p.status]++;
     }
   });
 
   const chartData = [
-    { name: '정상 진행', count: healthStats.Normal, color: '#00B894' },
-    { name: '지연', count: healthStats.Delayed, color: '#EF4444' },
-    { name: '완료', count: healthStats.Completed, color: '#3B82F6' },
+    { name: '기획', count: projectStats.Planning },
+    { name: '진행 중', count: projectStats['In Progress'] },
+    { name: '지연', count: projectStats.Delayed },
+    { name: '완료', count: projectStats.Completed },
   ];
 
   return (
@@ -54,11 +55,11 @@ const Home: React.FC = () => {
         
         <div className="relative z-10 p-8 md:p-12 text-white max-w-3xl">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            제조 공정 통합 관리 시스템
+            스마트한 협업, 투명한 업무 공유
           </h1>
           <p className="text-blue-100 text-lg mb-8 leading-relaxed">
-            실시간으로 프로젝트 공정과 납품 현황을 모니터링하고,<br />
-            이슈 발생 시 즉각 대응하세요.
+            실시간으로 공유되는 프로젝트 진행 상황을 확인하고,<br />
+            나의 업무를 효율적으로 관리하세요.
           </p>
           <div className="flex flex-wrap gap-4">
             <Link to="/tasks" className="bg-[#00B894] hover:bg-[#00a383] text-white px-6 py-3 rounded-lg font-semibold flex items-center transition-colors shadow-lg">
@@ -76,8 +77,11 @@ const Home: React.FC = () => {
         {/* Stats Chart */}
         <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex justify-between items-center mb-6 shrink-0">
-                <h2 className="text-lg font-bold text-gray-800">프로젝트 상태 현황</h2>
-                <div className="text-sm text-gray-500">총 {projects.length}건</div>
+                <h2 className="text-lg font-bold text-gray-800">부서별 프로젝트 현황</h2>
+                <select className="text-sm border-gray-200 border rounded-md p-1 bg-gray-50 text-gray-600">
+                    <option>전체 기간</option>
+                    <option>이번 달</option>
+                </select>
             </div>
             {/* Flex-1 allows chart to fill remaining height of the 500px container */}
             <div className="w-full flex-1 min-h-[300px]">
@@ -90,9 +94,9 @@ const Home: React.FC = () => {
                             cursor={{fill: '#f8fafc'}}
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                         />
-                        <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={60}>
+                        <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40}>
                             {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Bar>
                     </BarChart>
@@ -118,6 +122,7 @@ const Home: React.FC = () => {
             </div>
 
             {/* Recent Updates Feed */}
+            {/* min-h-0 and flex-1 are crucial for nested scrolling within a flex container */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col min-h-0">
                 <h2 className="text-lg font-bold text-gray-800 mb-4 shrink-0">최근 업데이트</h2>
                 <div className="space-y-4 overflow-y-auto pr-1 custom-scrollbar flex-1">
