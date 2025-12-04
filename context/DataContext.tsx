@@ -3,60 +3,61 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Task } from '../types';
 
 // Initial Mock Data adapted for Manufacturing/Logistics
+// Dates updated to 2025 to simulate current/future relevance
 const initialProjectsMock: Project[] = [
   { 
     id: '1', 
     vendor: '현대자동차', 
     country: '대한민국', 
-    productionNumber: 'P-24001',
+    productionNumber: 'P-25001',
     pm: '김철수',
     manager: '이영희',
-    fatDate: '2024-06-15',
-    deliveryDate: '2024-06-30',
+    fatDate: '2025-06-15',
+    deliveryDate: '2025-06-30',
     processStage: 'Pending Inspection',
     healthStatus: 'Normal',
-    bom: { deadline: '2024-04-01', warningDays: 7 },
-    drawing: { deadline: '2024-04-15', warningDays: 5 },
-    program: { deadline: '2024-05-01', warningDays: 3 }
+    bom: { deadline: '2025-04-01', warningDays: 7 },
+    drawing: { deadline: '2025-04-15', warningDays: 5 },
+    program: { deadline: '2025-05-01', warningDays: 3 }
   },
   { 
     id: '2', 
     vendor: '테슬라 기가팩토리', 
     country: '미국', 
-    productionNumber: 'P-24005',
+    productionNumber: 'P-25005',
     pm: '박준호',
     manager: '최수진',
-    fatDate: '2024-05-10',
-    deliveryDate: '2024-05-20',
+    fatDate: '2025-05-10',
+    deliveryDate: '2025-05-20',
     processStage: 'Inspection Completed',
     healthStatus: 'Delayed',
-    bom: { deadline: '2024-03-01', warningDays: 7 },
-    drawing: { deadline: '2024-03-15', warningDays: 5 },
-    program: { deadline: '2024-04-01', warningDays: 3 }
+    bom: { deadline: '2025-03-01', warningDays: 7 },
+    drawing: { deadline: '2025-03-15', warningDays: 5 },
+    program: { deadline: '2025-04-01', warningDays: 3 }
   },
   { 
     id: '3', 
     vendor: 'LG에너지솔루션', 
     country: '폴란드', 
-    productionNumber: 'P-23099',
+    productionNumber: 'P-25099',
     pm: '정우성',
     manager: '강지원',
-    fatDate: '2024-04-01',
-    deliveryDate: '2024-04-15',
+    fatDate: '2025-04-01',
+    deliveryDate: '2025-04-15',
     processStage: 'Confirmed Shipment',
     healthStatus: 'Completed',
-    bom: { deadline: '2024-01-01', warningDays: 7 },
-    drawing: { deadline: '2024-01-15', warningDays: 5 },
-    program: { deadline: '2024-02-01', warningDays: 3 }
+    bom: { deadline: '2025-01-01', warningDays: 7 },
+    drawing: { deadline: '2025-01-15', warningDays: 5 },
+    program: { deadline: '2025-02-01', warningDays: 3 }
   }
 ];
 
 const initialTasksMock: Task[] = [
-  { id: 't1', title: 'P-24001 도면 검토', assignee: '김민수', priority: 'High', status: 'todo', dueDate: '2024-05-20' },
-  { id: 't2', title: 'P-24005 PLC 프로그램 수정', assignee: '박준호', priority: 'Medium', status: 'doing', dueDate: '2024-05-22' },
-  { id: 't3', title: '구매 발주 리스트 정리', assignee: '이영희', priority: 'Low', status: 'done', dueDate: '2024-05-18' },
-  { id: 't4', title: 'FAT 체크리스트 작성', assignee: '최수진', priority: 'High', status: 'todo', dueDate: '2024-05-25' },
-  { id: 't5', title: '주간 공정 회의 자료', assignee: '김철수', priority: 'Medium', status: 'doing', dueDate: '2024-05-21' },
+  { id: 't1', title: 'P-25001 도면 검토', assignee: '김민수', priority: 'High', status: 'todo', dueDate: '2025-05-20' },
+  { id: 't2', title: 'P-25005 PLC 프로그램 수정', assignee: '박준호', priority: 'Medium', status: 'doing', dueDate: '2025-05-22' },
+  { id: 't3', title: '구매 발주 리스트 정리', assignee: '이영희', priority: 'Low', status: 'done', dueDate: '2025-05-18' },
+  { id: 't4', title: 'FAT 체크리스트 작성', assignee: '최수진', priority: 'High', status: 'todo', dueDate: '2025-05-25' },
+  { id: 't5', title: '주간 공정 회의 자료', assignee: '김철수', priority: 'Medium', status: 'doing', dueDate: '2025-05-21' },
 ];
 
 interface DataContextType {

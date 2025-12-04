@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Calendar, Edit2, Trash2, X, Save, Plus, MapPin, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { Search, Edit2, Trash2, X, Save, Plus, MapPin, AlertTriangle, CheckCircle2, Clock, Calendar } from 'lucide-react';
 import { Project, ProcessStage, HealthStatus } from '../types';
 import { useData } from '../context/DataContext';
 
@@ -80,11 +80,35 @@ const Projects: React.FC = () => {
       case 'Normal':
         return <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1 w-fit"><CheckCircle2 size={12}/> 정상</span>;
       case 'Delayed':
-        return <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-bold flex items-center gap-1 w-fit"><AlertCircle size={12}/> 지연</span>;
+        return <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-bold flex items-center gap-1 w-fit"><AlertTriangle size={12}/> 지연</span>;
       case 'Completed':
         return <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1 w-fit"><Clock size={12}/> 완료</span>;
       default:
         return null;
+    }
+  };
+
+  // Logic to determine if a subtask is overdue or in warning period
+  const getDeadlineStatus = (deadline: string, warningDays: number) => {
+    if (!deadline) return 'normal';
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    const targetDate = new Date(deadline);
+    const warningDate = new Date(targetDate);
+    warningDate.setDate(targetDate.getDate() - warningDays);
+
+    if (today > targetDate) return 'overdue';
+    if (today >= warningDate) return 'warning';
+    return 'normal';
+  };
+
+  const getDeadlineStyles = (status: string) => {
+    switch(status) {
+        case 'overdue': return 'bg-red-50 border-red-200 text-red-700 ring-1 ring-red-100';
+        case 'warning': return 'bg-orange-50 border-orange-200 text-orange-700 ring-1 ring-orange-100';
+        default: return 'bg-gray-50 border-gray-100 text-gray-600';
     }
   };
 
@@ -96,6 +120,29 @@ const Projects: React.FC = () => {
                           p.productionNumber.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Helper component for Subtask Cell
+  const SubtaskCell = ({ label, deadline, warningDays }: { label: string, deadline: string, warningDays: number }) => {
+    const status = getDeadlineStatus(deadline, warningDays);
+    return (
+        <div className={`p-2 rounded border ${getDeadlineStyles(status)} transition-colors`}>
+            <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] opacity-75 font-medium">{label}</span>
+                {status === 'warning' && (
+                    <span title={`마감 ${warningDays}일 전 경고`}>
+                        <AlertTriangle size={10} />
+                    </span>
+                )}
+                {status === 'overdue' && (
+                    <span title="마감일 초과">
+                        <AlertTriangle size={10} />
+                    </span>
+                )}
+            </div>
+            <div className="font-semibold text-xs whitespace-nowrap">{deadline}</div>
+        </div>
+    );
+  };
 
   return (
     <div className="space-y-6 relative">
@@ -144,15 +191,15 @@ const Projects: React.FC = () => {
       {/* Project Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1200px]">
+          <table className="w-full text-left border-collapse min-w-[1300px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">업체명</th>
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">제작번호</th>
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">국가</th>
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">PM / 담당자</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">일정 (FAT/납기)</th>
-                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">관리 항목 (마감일)</th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">일정 (FAT/납기)</th>
+                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">관리 항목 (BOM/도면/프로그램)</th>
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">진행 단계</th>
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-20">상태</th>
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center w-24">관리</th>
@@ -182,25 +229,22 @@ const Projects: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-sm text-gray-600 space-y-1">
-                        <div className="flex items-center gap-1"><span className="text-xs text-gray-400 w-8">FAT</span> {project.fatDate}</div>
-                        <div className="flex items-center gap-1 font-medium text-blue-900"><span className="text-xs text-blue-400 w-8">납기</span> {project.deliveryDate}</div>
+                    <div className="text-sm text-gray-600 space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded">FAT</span> 
+                            <span>{project.fatDate}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-medium text-blue-900">
+                            <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded">납기</span> 
+                            <span>{project.deliveryDate}</span>
+                        </div>
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div className="bg-gray-50 p-2 rounded border border-gray-100">
-                            <div className="text-gray-500 mb-1">1차 BOM</div>
-                            <div className="font-medium">{project.bom.deadline}</div>
-                        </div>
-                        <div className="bg-gray-50 p-2 rounded border border-gray-100">
-                            <div className="text-gray-500 mb-1">도면</div>
-                            <div className="font-medium">{project.drawing.deadline}</div>
-                        </div>
-                        <div className="bg-gray-50 p-2 rounded border border-gray-100">
-                            <div className="text-gray-500 mb-1">프로그램</div>
-                            <div className="font-medium">{project.program.deadline}</div>
-                        </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        <SubtaskCell label="1차 BOM" deadline={project.bom.deadline} warningDays={project.bom.warningDays} />
+                        <SubtaskCell label="도면 출도" deadline={project.drawing.deadline} warningDays={project.drawing.warningDays} />
+                        <SubtaskCell label="프로그램" deadline={project.program.deadline} warningDays={project.program.warningDays} />
                     </div>
                   </td>
                   <td className="px-4 py-4">
@@ -241,7 +285,7 @@ const Projects: React.FC = () => {
         )}
       </div>
 
-      {/* Project Modal */}
+      {/* Project Create/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 animate-fade-in-up">
@@ -255,30 +299,18 @@ const Projects: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* 기본 정보 */}
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 border-b pb-2">기본 정보</h3>
+                <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                    <Edit2 size={14} className="text-[#00B894]"/> 기본 정보
+                </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">업체명</label>
-                    <input required type="text" value={formData.vendor} onChange={(e) => setFormData({...formData, vendor: e.target.value})} className="form-input" placeholder="업체명 입력" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">제작번호</label>
-                    <input required type="text" value={formData.productionNumber} onChange={(e) => setFormData({...formData, productionNumber: e.target.value})} className="form-input" placeholder="P-XXXXX" />
+                    <input required type="text" value={formData.vendor} onChange={(e) => setFormData({...formData, vendor: e.target.value})} className="form-input" placeholder="예: 현대자동차" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">국가</label>
-                    <input required type="text" value={formData.country} onChange={(e) => setFormData({...formData, country: e.target.value})} className="form-input" />
+                    <input required type="text" value={formData.country} onChange={(e) => setFormData({...formData, country: e.target.value})} className="form-input" placeholder="예: 대한민국" />
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">PM</label>
-                        <input required type="text" value={formData.pm} onChange={(e) => setFormData({...formData, pm: e.target.value})} className="form-input" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
-                        <input required type="text" value={formData.manager} onChange={(e) => setFormData({...formData, manager: e.target.value})} className="form-input" />
-                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -290,51 +322,80 @@ const Projects: React.FC = () => {
                         <input required type="date" value={formData.deliveryDate} onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})} className="form-input" />
                     </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">PM</label>
+                        <input required type="text" value={formData.pm} onChange={(e) => setFormData({...formData, pm: e.target.value})} className="form-input" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
+                        <input required type="text" value={formData.manager} onChange={(e) => setFormData({...formData, manager: e.target.value})} className="form-input" />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">제작번호</label>
+                    <input required type="text" value={formData.productionNumber} onChange={(e) => setFormData({...formData, productionNumber: e.target.value})} className="form-input" placeholder="P-24XXX" />
+                </div>
               </div>
 
               {/* 관리 항목 */}
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 border-b pb-2">관리 항목 (마감일 및 사전 경고)</h3>
+                <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                    <Calendar size={14} className="text-[#00B894]"/> 관리 항목 설정 (마감일 및 사전 경고)
+                </h3>
                 
                 {/* 1차 BOM */}
-                <div className="grid grid-cols-12 gap-4 items-end">
-                    <div className="col-span-4 text-sm font-medium text-gray-700 pb-2">1차 BOM</div>
-                    <div className="col-span-5">
-                        <label className="block text-xs text-gray-500 mb-1">마감일</label>
-                        <input required type="date" value={formData.bom.deadline} onChange={(e) => setFormData({...formData, bom: {...formData.bom, deadline: e.target.value}})} className="form-input" />
+                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                        <div className="col-span-3 text-sm font-bold text-gray-700">1차 BOM</div>
+                        <div className="col-span-5">
+                            <label className="block text-xs text-gray-500 mb-1">마감일</label>
+                            <input required type="date" value={formData.bom.deadline} onChange={(e) => setFormData({...formData, bom: {...formData.bom, deadline: e.target.value}})} className="form-input" />
+                        </div>
+                        <div className="col-span-4">
+                            <label className="block text-xs text-gray-500 mb-1">사전 경고(일)</label>
+                            <div className="flex items-center gap-2">
+                                <input required type="number" min="0" value={formData.bom.warningDays} onChange={(e) => setFormData({...formData, bom: {...formData.bom, warningDays: parseInt(e.target.value)}})} className="form-input text-right" />
+                                <span className="text-xs text-gray-500">일 전</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="col-span-3">
-                        <label className="block text-xs text-gray-500 mb-1">경고(일)</label>
-                        <input required type="number" min="0" value={formData.bom.warningDays} onChange={(e) => setFormData({...formData, bom: {...formData.bom, warningDays: parseInt(e.target.value)}})} className="form-input" />
+                    
+                    {/* 도면 출도 */}
+                    <div className="grid grid-cols-12 gap-4 items-center pt-2 border-t border-gray-200">
+                        <div className="col-span-3 text-sm font-bold text-gray-700">도면 출도</div>
+                        <div className="col-span-5">
+                            <input required type="date" value={formData.drawing.deadline} onChange={(e) => setFormData({...formData, drawing: {...formData.drawing, deadline: e.target.value}})} className="form-input" />
+                        </div>
+                        <div className="col-span-4">
+                            <div className="flex items-center gap-2">
+                                <input required type="number" min="0" value={formData.drawing.warningDays} onChange={(e) => setFormData({...formData, drawing: {...formData.drawing, warningDays: parseInt(e.target.value)}})} className="form-input text-right" />
+                                <span className="text-xs text-gray-500">일 전</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                {/* 도면 출도 */}
-                <div className="grid grid-cols-12 gap-4 items-end">
-                    <div className="col-span-4 text-sm font-medium text-gray-700 pb-2">도면 출도</div>
-                    <div className="col-span-5">
-                        <input required type="date" value={formData.drawing.deadline} onChange={(e) => setFormData({...formData, drawing: {...formData.drawing, deadline: e.target.value}})} className="form-input" />
-                    </div>
-                    <div className="col-span-3">
-                        <input required type="number" min="0" value={formData.drawing.warningDays} onChange={(e) => setFormData({...formData, drawing: {...formData.drawing, warningDays: parseInt(e.target.value)}})} className="form-input" />
-                    </div>
-                </div>
 
-                {/* 프로그램 */}
-                <div className="grid grid-cols-12 gap-4 items-end">
-                    <div className="col-span-4 text-sm font-medium text-gray-700 pb-2">프로그램</div>
-                    <div className="col-span-5">
-                        <input required type="date" value={formData.program.deadline} onChange={(e) => setFormData({...formData, program: {...formData.program, deadline: e.target.value}})} className="form-input" />
-                    </div>
-                    <div className="col-span-3">
-                        <input required type="number" min="0" value={formData.program.warningDays} onChange={(e) => setFormData({...formData, program: {...formData.program, warningDays: parseInt(e.target.value)}})} className="form-input" />
+                    {/* 프로그램 */}
+                    <div className="grid grid-cols-12 gap-4 items-center pt-2 border-t border-gray-200">
+                        <div className="col-span-3 text-sm font-bold text-gray-700">프로그램</div>
+                        <div className="col-span-5">
+                            <input required type="date" value={formData.program.deadline} onChange={(e) => setFormData({...formData, program: {...formData.program, deadline: e.target.value}})} className="form-input" />
+                        </div>
+                        <div className="col-span-4">
+                            <div className="flex items-center gap-2">
+                                <input required type="number" min="0" value={formData.program.warningDays} onChange={(e) => setFormData({...formData, program: {...formData.program, warningDays: parseInt(e.target.value)}})} className="form-input text-right" />
+                                <span className="text-xs text-gray-500">일 전</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
               </div>
 
               {/* 상태 설정 */}
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 border-b pb-2">진행 상태</h3>
+                <h3 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-[#00B894]"/> 진행 상태
+                </h3>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">진행 단계</label>
