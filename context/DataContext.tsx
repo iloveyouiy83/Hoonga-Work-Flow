@@ -1,21 +1,77 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Task } from '../types';
 
 // Initial Mock Data
 const initialProjectsMock: Project[] = [
-  { id: '1', name: '2024년도 웹사이트 리뉴얼', country: '대한민국', status: 'In Progress', progress: 65, deadline: '2024-06-30', manager: '김철수', department: '개발팀' },
-  { id: '2', name: '사내 보안 시스템 구축', country: '미국', status: 'Delayed', progress: 40, deadline: '2024-05-15', manager: '이민호', department: '인프라팀' },
-  { id: '3', name: 'Q2 마케팅 캠페인', country: '일본', status: 'Completed', progress: 100, deadline: '2024-04-01', manager: '박지영', department: '마케팅팀' },
-  { id: '4', name: '모바일 앱 V2.0 기획', country: '대한민국', status: 'Planning', progress: 15, deadline: '2024-08-20', manager: '최수진', department: '기획팀' },
-  { id: '5', name: '데이터 분석 플랫폼 도입', country: '싱가포르', status: 'In Progress', progress: 30, deadline: '2024-09-10', manager: '정우성', department: '데이터팀' },
+  { 
+    id: '1', 
+    vendor: 'ABC Tech', 
+    country: '미국', 
+    fatDate: '2025-06-15', 
+    deliveryDate: '2025-07-01', 
+    pm: '김철수', 
+    processStage: '검수예정',
+    healthStatus: '정상',
+    managementItems: [
+      { id: 'm1', productionNumber: 'P-25-001', name: '1차 BOM', manager: '이영희', deadline: '2025-03-01', warningDays: 7 },
+      { id: 'm2', productionNumber: 'P-25-001', name: '도면 출도', manager: '박디자', deadline: '2025-03-15', warningDays: 7 },
+      { id: 'm3', productionNumber: 'P-25-001', name: '프로그램', manager: '최개발', deadline: '2025-05-01', warningDays: 14 }
+    ]
+  },
+  { 
+    id: '2', 
+    vendor: 'Samsung Heavy', 
+    country: '대한민국', 
+    fatDate: '2025-05-20', 
+    deliveryDate: '2025-06-10', 
+    pm: '박준호', 
+    processStage: '검수확정',
+    healthStatus: '지연',
+    managementItems: [
+      { id: 'm1', productionNumber: 'P-25-002', name: '1차 BOM', manager: '최수진', deadline: '2025-02-10', warningDays: 5 },
+      { id: 'm2', productionNumber: 'P-25-002', name: '도면 출도', manager: '최수진', deadline: '2025-02-25', warningDays: 5 },
+      { id: 'm3', productionNumber: 'P-25-002', name: '프로그램', manager: '김코딩', deadline: '2025-04-10', warningDays: 10 }
+    ]
+  },
+  { 
+    id: '3', 
+    vendor: 'Tokyo Elec', 
+    country: '일본', 
+    fatDate: '2025-08-01', 
+    deliveryDate: '2025-08-20', 
+    pm: '정우성', 
+    processStage: '출고확정',
+    healthStatus: '완료',
+    managementItems: [
+      { id: 'm1', productionNumber: 'P-25-005', name: '1차 BOM', manager: '강지원', deadline: '2025-01-15', warningDays: 7 },
+      { id: 'm2', productionNumber: 'P-25-005', name: '도면 출도', manager: '강지원', deadline: '2025-02-01', warningDays: 7 },
+      { id: 'm3', productionNumber: 'P-25-005', name: '프로그램', manager: '이로직', deadline: '2025-06-01', warningDays: 14 }
+    ]
+  },
+  { 
+    id: '4', 
+    vendor: 'Euro Systems', 
+    country: '독일', 
+    fatDate: '2025-09-10', 
+    deliveryDate: '2025-10-01', 
+    pm: '김철수', 
+    processStage: '검수예정',
+    healthStatus: '정상',
+    managementItems: [
+      { id: 'm1', productionNumber: 'P-25-010', name: '1차 BOM', manager: '박민규', deadline: '2025-05-10', warningDays: 7 },
+      { id: 'm2', productionNumber: 'P-25-010', name: '도면 출도', manager: '박민규', deadline: '2025-05-25', warningDays: 7 },
+      { id: 'm3', productionNumber: 'P-25-011', name: '프로그램', manager: '정시스템', deadline: '2025-07-01', warningDays: 14 }
+    ]
+  },
 ];
 
 const initialTasksMock: Task[] = [
-  { id: 't1', title: '메인 페이지 디자인 시안 리뷰', assignee: '김민수', priority: 'High', status: 'todo', dueDate: '2024-05-20' },
-  { id: 't2', title: 'API 명세서 작성', assignee: '박준호', priority: 'Medium', status: 'doing', dueDate: '2024-05-22' },
-  { id: 't3', title: '로고 리소스 정리', assignee: '이영희', priority: 'Low', status: 'done', dueDate: '2024-05-18' },
-  { id: 't4', title: '경쟁사 분석 리포트', assignee: '최수진', priority: 'High', status: 'todo', dueDate: '2024-05-25' },
-  { id: 't5', title: '주간 회의 자료 준비', assignee: '김철수', priority: 'Medium', status: 'doing', dueDate: '2024-05-21' },
+  { id: 't1', title: 'P-25-001 BOM 리스트 검토', assignee: '김민수', priority: 'High', status: 'todo', dueDate: '2025-03-05' },
+  { id: 't2', title: 'P-25-002 FAT 시나리오 작성', assignee: '박준호', priority: 'Medium', status: 'doing', dueDate: '2025-04-22' },
+  { id: 't3', title: 'P-25-005 선적 서류 준비', assignee: '이영희', priority: 'Low', status: 'done', dueDate: '2025-08-10' },
+  { id: 't4', title: '신규 프로젝트 킥오프 미팅', assignee: '최수진', priority: 'High', status: 'todo', dueDate: '2025-03-01' },
+  { id: 't5', title: '주간 공정 회의 자료 취합', assignee: '김철수', priority: 'Medium', status: 'doing', dueDate: '2025-03-15' },
 ];
 
 interface DataContextType {
